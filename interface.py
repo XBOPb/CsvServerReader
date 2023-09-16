@@ -12,7 +12,10 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(745, 573)
+        MainWindow.resize(420, 130)
+        MainWindow.setMinimumSize(QtCore.QSize(420, 130))
+        MainWindow.setMaximumSize(QtCore.QSize(420, 130))
+        MainWindow.setStyleSheet("background-color: rgb(255, 242, 220);")
         self.centralwidget = QtWidgets.QWidget(parent=MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.gridLayout = QtWidgets.QGridLayout(self.centralwidget)
@@ -20,17 +23,27 @@ class Ui_MainWindow(object):
         self.verticalLayout = QtWidgets.QVBoxLayout()
         self.verticalLayout.setObjectName("verticalLayout")
         self.start_server_button = QtWidgets.QPushButton(parent=self.centralwidget)
+        self.start_server_button.setStyleSheet("QPushButton{\n"
+"background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 white, stop: 1 grey);\n"
+"border-style: solid;\n"
+"border-color: black;\n"
+"border-width: 2px;\n"
+"border-radius: 10px;\n"
+"}")
         self.start_server_button.setObjectName("start_server_button")
         self.verticalLayout.addWidget(self.start_server_button)
+        spacerItem = QtWidgets.QSpacerItem(20, 20, QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Fixed)
+        self.verticalLayout.addItem(spacerItem)
         self.open_csv_button = QtWidgets.QPushButton(parent=self.centralwidget)
+        self.open_csv_button.setStyleSheet("QPushButton{\n"
+"background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 white, stop: 1 grey);\n"
+"border-style: solid;\n"
+"border-color: black;\n"
+"border-width: 2px;\n"
+"border-radius: 10px;\n"
+"}")
         self.open_csv_button.setObjectName("open_csv_button")
         self.verticalLayout.addWidget(self.open_csv_button)
-        self.checkBox = QtWidgets.QCheckBox(parent=self.centralwidget)
-        self.checkBox.setObjectName("checkBox")
-        self.verticalLayout.addWidget(self.checkBox)
-        self.data_field = QtWidgets.QTextEdit(parent=self.centralwidget)
-        self.data_field.setObjectName("data_field")
-        self.verticalLayout.addWidget(self.data_field)
         self.gridLayout.addLayout(self.verticalLayout, 0, 0, 1, 1)
         MainWindow.setCentralWidget(self.centralwidget)
 
@@ -42,7 +55,6 @@ class Ui_MainWindow(object):
         MainWindow.setWindowTitle(_translate("MainWindow", "CSVReader"))
         self.start_server_button.setText(_translate("MainWindow", "Start Server"))
         self.open_csv_button.setText(_translate("MainWindow", "Open CSV File"))
-        self.checkBox.setText(_translate("MainWindow", "CheckBox"))
 
 
 if __name__ == "__main__":

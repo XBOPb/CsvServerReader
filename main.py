@@ -1,5 +1,7 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from PyQt6.QtWidgets import QMainWindow, QApplication, QCheckBox, QFileDialog, QLabel, QTableWidget, QTableWidgetItem, QWidget, QVBoxLayout, QHBoxLayout
+from PyQt6.QtWidgets import (QMainWindow, QApplication, QPushButton, QCheckBox, 
+                             QFileDialog, QLabel, QTableWidget, 
+                             QTableWidgetItem, QWidget, QVBoxLayout, QHBoxLayout)
 from PyQt6.QtCore import QThread, QObject
 from PyQt6 import QtCore
 from PyQt6.QtGui import QFont
@@ -11,7 +13,6 @@ import subprocess
 import sys
 import csv
 
-
 class CSVReader(QMainWindow):
     def __init__(self):
         super(CSVReader, self).__init__()
@@ -21,14 +22,10 @@ class CSVReader(QMainWindow):
         self.ui.start_server_button.clicked.connect(self.start_server)
         self.ui.start_server_button.clicked.connect(self.report_started_server)
         self.ui.open_csv_button.clicked.connect(self.csv_choice_menu)
-        self.ui.checkBox.stateChanged.connect(self.write_column_names)
 
     def report_started_server(self): 
-        self.ui.start_server_button.setText("Server started!")
+        self.ui.start_server_button.setText("Server started at 127.0.0.1:8000")
         self.ui.start_server_button.setEnabled(False)
-
-    def write_column_names(self):
-        self.ui.data_field.setText(self.columns)
  
     def give_columns_info(self, columns):
         self.columns = columns
@@ -82,24 +79,33 @@ class Database(QMainWindow):
         super().__init__(parent)
         self.setWindowTitle("Table overview")
         self.resize(450, 250)
+        # Set up the view and load the data
+        query = QSqlQuery(f"SELECT * FROM {main_name}")
+        self.build_table(query)
+        
+    def build_table(self, query):
         self.central_widget = QWidget(self)
         self.vertical_layout = QVBoxLayout(self.central_widget)
         self.columns_layout = QHBoxLayout()
-        # Set up the view and load the data
         self.view = QTableWidget()
         self.vertical_layout.addLayout(self.columns_layout)
         self.vertical_layout.addWidget(self.view)
-        self.view.setColumnCount(4)
         headers = self.get_headers()
         column_number = len(headers)
+        self.view.setColumnCount(column_number)
         for header in headers:
+            self.column_order = QPushButton(f'Sort')
+            self.column_order.setFixedSize(30, 20)
+            self.column_order.setObjectName(f'sort_{header}')
+            self.columns_layout.addWidget(self.column_order)
+            self.column_order.clicked.connect(self.sort_database)
+
             self.column_box = QCheckBox(header)
             self.column_box.setChecked(True)
             self.column_box.stateChanged.connect(self.filter_database)
             self.columns_layout.addWidget(self.column_box)
 
         self.view.setHorizontalHeaderLabels(headers)
-        query = QSqlQuery(f"SELECT * FROM {main_name}")
         while query.next():
             rows = self.view.rowCount()
             self.view.setRowCount(rows + 1)
@@ -110,20 +116,26 @@ class Database(QMainWindow):
 
     def get_headers(self):
         connection = sqlite3.connect('db.sqlite3')
-        cursor = connection.execute(f'select * from {main_name}')
+        cursor = connection.execute(f'SELECT * FROM {main_name}')
         names = [description[0] for description in cursor.description]
         connection.close()
         return names
     
-    def filter_database(self, state):
+    def filter_database(self):
         all_boxes = self.findChildren(QCheckBox)
         for i, box in enumerate(all_boxes):
             if box.checkState() == QtCore.Qt.CheckState.Unchecked:
                 self.view.setColumnHidden(i, True)
             else:
                 self.view.setColumnHidden(i, False)
-        
 
+    def sort_database(self):
+        self.view.clear()
+        sort_button = str(self.sender().objectName()).replace('sort_', '')
+        query = QSqlQuery(f'SELECT * FROM {main_name} ORDER BY {sort_button}')
+        self.build_table(query)
+
+        
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -147,6 +159,8 @@ class handler(BaseHTTPRequestHandler):
     
     def write_to_sqlite(self):
         connection = self.connect_to_sqlite()
+        clear_query = self.delete_table_query()
+        self.execute_query(connection, clear_query)
         create_query = self.create_table_query()
         self.execute_query(connection, create_query)
         insert_query = self.insert_data_query()
@@ -155,8 +169,11 @@ class handler(BaseHTTPRequestHandler):
     def create_table_query(self):
         self.columns = ','.join(self.column_names)
         create_table = f"CREATE TABLE IF NOT EXISTS {main_name} ({self.columns});"
-        print(create_table)
         return create_table
+    
+    def delete_table_query(self):
+        drop_table = f"DROP TABLE IF EXISTS {main_name}"
+        return drop_table
     
     def insert_data_query(self):
         new_list = self.message_list[1:]

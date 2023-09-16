@@ -1,2 +1,2 @@
 # CsvServerReader
-Http server with interface for reading csv files
+HTTP service with interface for reading csv files
