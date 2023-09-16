@@ -26,10 +26,6 @@ class CSVReader(QMainWindow):
     def report_started_server(self): 
         self.ui.start_server_button.setText("Server started at 127.0.0.1:8000")
         self.ui.start_server_button.setEnabled(False)
- 
-    def give_columns_info(self, columns):
-        self.columns = columns
-        self.ui.checkBox.setChecked(True)
 
     def csv_choice_menu(self):
         file_dialog = QFileDialog()
@@ -39,6 +35,7 @@ class CSVReader(QMainWindow):
             return
         
         if ' ' in csv_path:
+            # command line does not like spaces
             warning = QLabel("PATH TO CSV MUST NOT CONTAIN SPACE SYMBOL.")
             warning.setStyleSheet("QLabel {color: red;}")
             warning.setFont(QFont('Times', 20))
@@ -50,12 +47,15 @@ class CSVReader(QMainWindow):
         filename = os.path.basename(csv_path)
         temp_file = os.path.join(self.temp, filename)
         global main_name
+        # save globally for table creation
         main_name = filename.split('.')[0]
         
         with open(temp_file, 'w') as file:
             file.write(str(csv_lines))
+        # send post request
         subprocess.check_output(f'curl -d @{temp_file} http://127.0.0.1:8000')
         self.close()
+        # show db in GUI
         self.connect_sql_qt()
 
     def connect_sql_qt(self):
@@ -67,6 +67,7 @@ class CSVReader(QMainWindow):
         win.show()
 
     def start_server(self):
+        # start server in thread so GUI doesn't freeze
         self.thread = QThread()
         self.worker = StartServer()
         self.worker.moveToThread(self.thread)
@@ -74,16 +75,18 @@ class CSVReader(QMainWindow):
         self.thread.finished.connect(self.thread.deleteLater)
         self.thread.start()
     
+
 class Database(QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Table overview")
         self.resize(450, 250)
-        # Set up the view and load the data
+        # get all items query
         query = QSqlQuery(f"SELECT * FROM {main_name}")
         self.build_table(query)
         
     def build_table(self, query):
+        # set up table
         self.central_widget = QWidget(self)
         self.vertical_layout = QVBoxLayout(self.central_widget)
         self.columns_layout = QHBoxLayout()
@@ -122,6 +125,7 @@ class Database(QMainWindow):
         return names
     
     def filter_database(self):
+        # hide/show column depending on checkbox
         all_boxes = self.findChildren(QCheckBox)
         for i, box in enumerate(all_boxes):
             if box.checkState() == QtCore.Qt.CheckState.Unchecked:
@@ -138,6 +142,7 @@ class Database(QMainWindow):
         
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
+        # in case you want to check if server's up
         self.send_response(200)
         self.send_header('Content-type','text/html')
         self.end_headers()
@@ -158,6 +163,7 @@ class handler(BaseHTTPRequestHandler):
         self.end_headers()
     
     def write_to_sqlite(self):
+        # write post data to sqlite database
         connection = self.connect_to_sqlite()
         clear_query = self.delete_table_query()
         self.execute_query(connection, clear_query)
@@ -192,6 +198,7 @@ class handler(BaseHTTPRequestHandler):
             print(f"The error '{e}' occurred")
 
     def connect_to_sqlite(self):
+        # inital connection to sqlite
         connection = None
         try:
             db_name = 'db.sqlite3'
