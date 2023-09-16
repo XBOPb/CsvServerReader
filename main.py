@@ -19,6 +19,7 @@ class CSVReader(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.temp = os.environ['TEMP']
+        self.ui.open_csv_button.setEnabled(False)
         self.ui.start_server_button.clicked.connect(self.start_server)
         self.ui.start_server_button.clicked.connect(self.report_started_server)
         self.ui.open_csv_button.clicked.connect(self.csv_choice_menu)
@@ -67,6 +68,7 @@ class CSVReader(QMainWindow):
         win.show()
 
     def start_server(self):
+        self.ui.open_csv_button.setEnabled(True)
         # start server in thread so GUI doesn't freeze
         self.thread = QThread()
         self.worker = StartServer()
